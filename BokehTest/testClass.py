@@ -2,8 +2,11 @@ from bokeh.plotting import curdoc, figure
 import time
 from bokeh.models import ColumnDataSource, Toggle
 from functools import partial
-from bokeh.layouts import column, row
+from bokeh.layouts import column, row, layout
 from bokeh.models.widgets import CheckboxButtonGroup
+from datetime import datetime, timedelta
+
+start_date = datetime(2017, 1, 15, 12)
 
 class TogglePlot():
     def __init__(self, figNames):
@@ -12,7 +15,7 @@ class TogglePlot():
         self.doc = curdoc()
         self.figs = self.createFigs(figNames)
         self.toggles = self.createButtons(figNames)
-        self.layout = column(row(self.toggles, name="buttons", sizing_mode='stretch_both'), sizing_mode='stretch_both')
+        self.layout = layout([self.toggles], sizing_mode='stretch_both')
         self.doc.add_root(self.layout)
         self.popFigures()
 
@@ -23,9 +26,12 @@ class TogglePlot():
     def createFigs(self, figNames):
         figs = {}
         for count, name in enumerate(figNames):
-            plot = figure(x_range=[0,20], y_range=[0,20], name=name, sizing_mode='stretch_both', title=name)
+            plot = figure(x_range=[0,20], y_range=[0,20], name=name, sizing_mode='stretch_both',
+                          title=name)
             y_string = 'y' + str(count)
-            plot.circle(x='x', y=y_string, source=self.source)
+            plot.line(x='x', y=y_string, source=self.source, legend='line')
+            plot.circle(x='x', y=y_string, source=self.source, legend='circle')
+            plot.legend.click_policy = "hide"
             figs[name] = plot
         return figs
 
@@ -38,6 +44,7 @@ class TogglePlot():
         return _func
 
     def update(self):
+        # x = [start_date+timedelta(hours=i) for i in range(len(self.data[0]))]
         x = [i for i in range(len(self.data[0]))]
         self.source.stream(dict(x=x, y0=self.data[0], y1=self.data[1], y2=self.data[2]))
 
@@ -117,7 +124,7 @@ class Reporter():
         y = [i for i in range(len(self.data))]
         self.source.stream(dict(x=self.data, y=y))
 
-class TestObject():
+class SimulationCode():
     def __init__(self):
         self.data = []
         self.count = 0
@@ -137,7 +144,7 @@ class TestObject():
             self.addSomeData()
             self.report()
 
-class TestObject2():
+class SimulationCode2():
     def __init__(self):
         self.count = 0
         self.figNames = ["Plot 1", "Plot 2", "Plot 3"]
@@ -159,9 +166,11 @@ class TestObject2():
             self.report()
 
 class TestRun():
-    def __init__(self):
-        # self.obj = TestObject()
-        self.obj = TestObject2()
+    def __init__(self, choice=None):
+        if choice is not None:
+            self.obj = SimulationCode()
+        else:
+            self.obj = SimulationCode2()
 
     def run(self):
         self.obj.runSimulation()
