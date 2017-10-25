@@ -1,9 +1,58 @@
 from bokeh.plotting import curdoc, figure
 import time
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, Toggle
 from functools import partial
 from bokeh.layouts import column, row
 from bokeh.models.widgets import CheckboxButtonGroup
+
+class TogglePlot():
+    def __init__(self, figNames):
+        self.data = []
+        self.source = ColumnDataSource(data=dict(x=[0], y0=[0], y1=[0], y2=[0]))
+        self.doc = curdoc()
+        self.figs = self.createFigs(figNames)
+        self.toggles = self.createButtons(figNames)
+        self.layout = column(row(self.toggles, name="buttons", sizing_mode='stretch_both'), sizing_mode='stretch_both')
+        self.doc.add_root(self.layout)
+        self.popFigures()
+
+    def popFigures(self):
+        for name in self.figs:
+            self.layout.children.append(self.figs[name])
+
+    def createFigs(self, figNames):
+        figs = {}
+        for count, name in enumerate(figNames):
+            plot = figure(x_range=[0,20], y_range=[0,20], name=name, sizing_mode='stretch_both', title=name)
+            y_string = 'y' + str(count)
+            plot.circle(x='x', y=y_string, source=self.source)
+            figs[name] = plot
+        return figs
+
+    def toggleFunction(self, button):
+        def _func(indicator):
+            if button.active == False:
+                self.layout.children.remove(self.figs[button.label])
+            elif button.active == True:
+                self.layout.children.append(self.figs[button.label])
+        return _func
+
+    def update(self):
+        x = [i for i in range(len(self.data[0]))]
+        self.source.stream(dict(x=x, y0=self.data[0], y1=self.data[1], y2=self.data[2]))
+
+    def report(self, data):
+        self.data = data
+        self.doc.add_next_tick_callback(partial(self.update))
+
+    def createButtons(self, figNames):
+        toggles = []
+        for name in figNames:
+            toggle = Toggle(label=name, active=True)
+            toggleFunction = self.toggleFunction(toggle)
+            toggle.on_click(toggleFunction)
+            toggles.append(toggle)
+        return toggles
 
 class Reporter():
     def __init__(self, figNames):
@@ -88,9 +137,31 @@ class TestObject():
             self.addSomeData()
             self.report()
 
+class TestObject2():
+    def __init__(self):
+        self.count = 0
+        self.figNames = ["Plot 1", "Plot 2", "Plot 3"]
+        self.data = [[] for _ in range(len(self.figNames))]
+        self.reporter = TogglePlot(self.figNames)
+
+    def addSomeData(self):
+        for data in self.data:
+            data.append(self.count)
+            self.count += 1
+
+    def report(self):
+        self.reporter.report(self.data)
+
+    def runSimulation(self):
+        for i in range(20):
+            time.sleep(1)
+            self.addSomeData()
+            self.report()
+
 class TestRun():
     def __init__(self):
-        self.obj = TestObject()
+        # self.obj = TestObject()
+        self.obj = TestObject2()
 
     def run(self):
         self.obj.runSimulation()
