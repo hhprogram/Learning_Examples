@@ -12,13 +12,15 @@ start_date = datetime(2017, 1, 15, 12)
 class TogglePlot():
     def __init__(self, figNames):
         self.data = []
-        self.source = ColumnDataSource(data=dict(x=[], y0= [], y1=[], y2=[]))
+        self.xvalues = []
+        self.source = ColumnDataSource(data=dict(x=self.xvalues, y0= [], y1=[], y2=[]))
         self.doc = curdoc()
         self.figs = self.createFigs(figNames)
         self.toggles = self.createButtons(figNames)
         self.layout = layout([self.toggles], sizing_mode='stretch_both')
         self.doc.add_root(self.layout)
         self.popFigures()
+        self.count = 0
 
     def popFigures(self):
         """initial population of the bokeh plots"""
@@ -50,12 +52,13 @@ class TogglePlot():
         return _func
 
     def update(self):
-        data_dict = dict(x=[i for i in range(len(self.data[0]))], y0=self.data[0], y1=self.data[1], y2=self.data[2])
+        data_dict = dict(x=[self.count], y0=[self.data[0][-1]], y1=[self.data[1][-1]], y2=[self.data[2][-1]])
         self.source.stream(data_dict)
+        self.count += 1
 
     def report(self, data):
         self.data = data
-        self.doc.add_next_tick_callback(partial(self.update))
+        self.doc.add_next_tick_callback(self.update)
 
     def createButtons(self, figNames):
         """helper function that creates all my toggle buttons based on FIGNAMES"""
