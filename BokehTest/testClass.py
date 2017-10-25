@@ -12,7 +12,7 @@ start_date = datetime(2017, 1, 15, 12)
 class TogglePlot():
     def __init__(self, figNames):
         self.data = []
-        self.source = ColumnDataSource(data=dict(x=[0], y0= np.array([0]), y1=[0], y2=[0]))
+        self.source = ColumnDataSource(data=dict(x=[], y0= [], y1=[], y2=[]))
         self.doc = curdoc()
         self.figs = self.createFigs(figNames)
         self.toggles = self.createButtons(figNames)
@@ -33,7 +33,7 @@ class TogglePlot():
             plot = figure(x_range=[0,20], y_range=[0,20], name=name, sizing_mode='stretch_both',
                           title=name)
             y_string = 'y' + str(count)
-            plot.line(x='x', y=y_string, source=self.source, legend='line')
+            plot.line(x='x', y=y_string, source=self.source, legend='line', line_color='black')
             plot.circle(x='x', y=y_string, source=self.source, legend='circle')
             plot.legend.click_policy = "hide"
             figs[name] = plot
@@ -50,9 +50,8 @@ class TogglePlot():
         return _func
 
     def update(self):
-        # x = [start_date+timedelta(hours=i) for i in range(len(self.data[0]))]
-        x = [i for i in range(len(self.data[0]))]
-        self.source.stream(dict(x=x, y0=self.data[0], y1=self.data[1], y2=self.data[2]))
+        data_dict = dict(x=[i for i in range(len(self.data[0]))], y0=self.data[0], y1=self.data[1], y2=self.data[2])
+        self.source.stream(data_dict)
 
     def report(self, data):
         self.data = data
@@ -77,7 +76,7 @@ class Reporter():
         self.buttonToFig = {}
         self.popFigures(figNames)
         self.buttons = self.createButtons(figNames)
-        self.layout = column(row(self.buttons, name="buttons"), sizing_mode='scale_width')
+        self.layout = column(row(self.buttons, name="buttons"), sizing_mode='stretch_both')
         # below works if I want a static layout with the first row with a checkboxbutton Group and then each of
         # the figures in self.figs occupying a row to themselves.
         # layout = column(row(buttons, name='buttons'), row([self.figs[fig] for fig in self.figs]), sizing_mode='scale_width')
