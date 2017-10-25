@@ -6,3 +6,8 @@ https://bokeh.pydata.org/en/latest/docs/user_guide/server.html#updating-from-thr
 
 to run:
 `bokeh serve --show run.py` in this BokehTest directory
+
+Note:
+You can switch between the implementation using CheckboxButtonGroup and toggle buttons
+by commenting / uncommenting the respective lines in the TestRun() constructor method.
+(TestObject = CheckboxButtonGroup, TestObject2 = Toggle buttons)
