@@ -3,3 +3,6 @@ having bokeh server update with real-time streaming data, sourced from the pytho
 real time. Also, adds some functionality of adding and removing plots.
 Credit to bokeh documentation (below) as I used their example as initial guidance:
 https://bokeh.pydata.org/en/latest/docs/user_guide/server.html#updating-from-threads
+
+to run:
+`bokeh serve --show run.py` in this BokehTest directory
