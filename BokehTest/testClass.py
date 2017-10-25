@@ -5,13 +5,14 @@ from functools import partial
 from bokeh.layouts import column, row, layout
 from bokeh.models.widgets import CheckboxButtonGroup
 from datetime import datetime, timedelta
+import numpy as np
 
 start_date = datetime(2017, 1, 15, 12)
 
 class TogglePlot():
     def __init__(self, figNames):
         self.data = []
-        self.source = ColumnDataSource(data=dict(x=[0], y0=[0], y1=[0], y2=[0]))
+        self.source = ColumnDataSource(data=dict(x=[0], y0= np.array([0]), y1=[0], y2=[0]))
         self.doc = curdoc()
         self.figs = self.createFigs(figNames)
         self.toggles = self.createButtons(figNames)
@@ -20,10 +21,13 @@ class TogglePlot():
         self.popFigures()
 
     def popFigures(self):
+        """initial population of the bokeh plots"""
         for name in self.figs:
             self.layout.children.append(self.figs[name])
 
     def createFigs(self, figNames):
+        """creates dict full of figures so we can reference self.figs when removing and appending
+        the figures based on the toggle status"""
         figs = {}
         for count, name in enumerate(figNames):
             plot = figure(x_range=[0,20], y_range=[0,20], name=name, sizing_mode='stretch_both',
@@ -36,6 +40,8 @@ class TogglePlot():
         return figs
 
     def toggleFunction(self, button):
+        """helper function that takes a 'Toggle' object and then uses that object reference
+        to get that toggle's string value in order to remove / append the correct plot"""
         def _func(indicator):
             if button.active == False:
                 self.layout.children.remove(self.figs[button.label])
@@ -53,6 +59,7 @@ class TogglePlot():
         self.doc.add_next_tick_callback(partial(self.update))
 
     def createButtons(self, figNames):
+        """helper function that creates all my toggle buttons based on FIGNAMES"""
         toggles = []
         for name in figNames:
             toggle = Toggle(label=name, active=True)
