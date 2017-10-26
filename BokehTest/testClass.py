@@ -1,19 +1,86 @@
 from bokeh.plotting import curdoc, figure
 import time
-from bokeh.models import ColumnDataSource, Toggle
+from bokeh.models import ColumnDataSource, Toggle, DatetimeTickFormatter
 from functools import partial
 from bokeh.layouts import column, row, layout
 from bokeh.models.widgets import CheckboxButtonGroup
 from datetime import datetime, timedelta
 import numpy as np
 
-start_date = datetime(2017, 1, 15, 12)
+class DatetimePlot():
+    def __init__(self, figNames):
+        self.data = []
+        self.source = ColumnDataSource(data=dict(x=[], y0= [], y1=[], y2=[]))
+        self.doc = curdoc()
+        self.date = datetime.now()
+        self.figs = self.createFigs(figNames)
+        self.toggles = self.createButtons(figNames)
+        self.layout = layout([self.toggles], sizing_mode='stretch_both')
+        self.doc.add_root(self.layout)
+        self.popFigures()
+
+    def popFigures(self):
+        """initial population of the bokeh plots"""
+        for name in self.figs:
+            self.layout.children.append(self.figs[name])
+
+    def createFigs(self, figNames):
+        """creates dict full of figures so we can reference self.figs when removing and appending
+        the figures based on the toggle status"""
+        figs = {}
+        figToShare = None
+        for count, name in enumerate(figNames):
+            if count != 0:
+                plot = figure(x_range=figToShare.x_range, y_range=[0, 20], name=name,
+                              sizing_mode='stretch_both',
+                              title=name, x_axis_type="datetime")
+            else:
+                plot = figure(x_range=[self.date, self.date+timedelta(hours=40)], y_range=[0,20], name=name, sizing_mode='stretch_both',
+                              title=name, x_axis_type="datetime")
+                figToShare = plot
+            y_string = 'y' + str(count)
+            plot.line(x='x', y=y_string, source=self.source, legend='line', line_color='black')
+            plot.circle(x='x', y=y_string, source=self.source, legend='circle')
+            plot.xaxis.formatter = DatetimeTickFormatter(hours=['%m/%d - %H:%M'],
+                                                         days=['%m/%d'])
+            plot.legend.click_policy = "hide"
+            figs[name] = plot
+        return figs
+
+    def toggleFunction(self, button):
+        """helper function that takes a 'Toggle' object and then uses that object reference
+        to get that toggle's string value in order to remove / append the correct plot"""
+        def _func(indicator):
+            if button.active == False:
+                self.layout.children.remove(self.figs[button.label])
+            elif button.active == True:
+                self.layout.children.append(self.figs[button.label])
+        return _func
+
+    def update(self):
+        data_dict = dict(x=[self.date], y0=[self.data[0][-1]], y1=[self.data[1][-1]], y2=[self.data[2][-1]])
+        self.source.stream(data_dict)
+        self.date += timedelta(hours=2)
+
+    def report(self, data):
+        self.data = data
+        self.doc.add_next_tick_callback(partial(self.update))
+
+    def createButtons(self, figNames):
+        """helper function that creates all my toggle buttons based on FIGNAMES"""
+        toggles = []
+        for name in figNames:
+            toggle = Toggle(label=name, active=True)
+            toggleFunction = self.toggleFunction(toggle)
+            toggle.on_click(toggleFunction)
+            toggles.append(toggle)
+        return toggles
+
 
 class TogglePlot():
     def __init__(self, figNames):
         self.data = []
-        self.xvalues = []
-        self.source = ColumnDataSource(data=dict(x=self.xvalues, y0= [], y1=[], y2=[]))
+        self.source = ColumnDataSource(data=dict(x=[], y0=[], y1=[], y2=[]))
         self.doc = curdoc()
         self.figs = self.createFigs(figNames)
         self.toggles = self.createButtons(figNames)
@@ -58,7 +125,7 @@ class TogglePlot():
 
     def report(self, data):
         self.data = data
-        self.doc.add_next_tick_callback(self.update)
+        self.doc.add_next_tick_callback(partial(self.update))
 
     def createButtons(self, figNames):
         """helper function that creates all my toggle buttons based on FIGNAMES"""
@@ -158,7 +225,8 @@ class SimulationCode2():
         self.count = 0
         self.figNames = ["Plot 1", "Plot 2", "Plot 3"]
         self.data = [[] for _ in range(len(self.figNames))]
-        self.reporter = TogglePlot(self.figNames)
+        # self.reporter = TogglePlot(self.figNames)
+        self.reporter = DatetimePlot(self.figNames)
 
     def addSomeData(self):
         for data in self.data:
