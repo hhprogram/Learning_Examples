@@ -16,6 +16,14 @@ class DatetimePlot():
         self.figs = self.createFigs(figNames)
         self.toggles = self.createButtons(figNames)
         self.layout = layout([self.toggles], sizing_mode='stretch_both')
+        # note: cannot put add root in a method or anything that would
+        # change the change of self.doc (ie add_root() or adding elements to self.layout)
+        # that isn't the constructor or the method that is the argument for add_next_tick_callback() because if it is
+        # then it will be trying to change the status of the self.doc when it doesn't have the 'lock' and since we
+        # are threading it will throw an error. So need to put anything changing status of curdoc() in either the
+        # initial constructor (ie normal path of running script) or in method as stated above as I think when
+        # that callback is called - that gurantees that the lock is now obtained and now changes to the curdoc can
+        # safely be made Note:READ INTO THIS MORE
         self.doc.add_root(self.layout)
         self.popFigures()
 
